@@ -10,7 +10,9 @@ const todos = [{
   text: 'First test todo'
 }, {
   _id: new ObjectID(),
-  text: 'Second test todo'
+  text: 'Second test todo',
+  completed: true,
+  completedAt: new Date().getTime()
 }];
 
 beforeEach((done) => {
@@ -143,5 +145,54 @@ describe('DELETE /todos/:id', () => {
       .end(done);
   });
 
+
+});
+
+describe('PATCH /todos/:id', () => {
+
+  it('should update the todo', (done) => {
+    var id = todos[0]._id;
+    var updatedText = 'First test todo is now complete';
+    request(app)
+      .patch(`/todos/${id}`)
+      .send({
+        text: updatedText,
+        completed: true
+      })
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.todo.text).toBeA('string').toBe(updatedText);
+        expect(res.body.todo.completed).toBeA('boolean').toBe(true);
+        expect(res.body.todo.completedAt).toBeA('number');
+      })
+      .end(done);
+
+  });
+
+  it('should clear completedAt when completed status is removed', (done) => {
+    var id = todos[1]._id;
+    var updatedText = 'First test todo is now incomplete';
+    request(app)
+      .patch(`/todos/${id}`)
+      .send({
+        text: updatedText,
+        completed: false
+      })
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.todo.text).toBeA('string').toBe(updatedText);
+        expect(res.body.todo.completed).toBeA('boolean').toBe(false);
+        expect(res.body.todo.completedAt).toNotExist();
+      })
+      .end(done);
+  });
+
+  it('should return 404 if object id is invalid', (done) => {
+    request(app)
+      .patch(`/todos/123abc`)
+      .send({text: 'abc', completed: true})
+      .expect(404)
+      .end(done);
+  });
 
 });
